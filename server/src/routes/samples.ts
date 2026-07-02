@@ -179,7 +179,7 @@ router.get("/:id", async (req, res) => {
   const bids = await prisma.bid.findMany({
     where: { sampleId: sample.id },
     include: { user: true },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { amountCents: "desc" }],
     take: 50,
   });
   res.json({

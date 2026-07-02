@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { Gavel, ShieldCheck, Zap, ExternalLink, ChevronRight, Share2, Check } from "lucide-react";
+import { Gavel, ShieldCheck, Zap, ExternalLink, Share2, Check } from "lucide-react";
 import { api, centsToDisplay, ApiError } from "../lib/api";
 import { getSocket } from "../lib/socket";
 import { useAuth } from "../context/AuthContext";
@@ -28,8 +28,6 @@ export function SampleDetail() {
   const [justExtended, setJustExtended] = useState(false);
   const [ended, setEnded] = useState(false);
   const [notFound, setNotFound] = useState(false);
-  const [autoBidOpen, setAutoBidOpen] = useState(false);
-  const [autoBidMax, setAutoBidMax] = useState("");
   const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
@@ -105,7 +103,9 @@ export function SampleDetail() {
 
   function applyQuickIncrement(incrementCents: number) {
     if (!sample) return;
-    const amount = Math.max(minNextBid, sample.currentPriceCents + incrementCents);
+    const typedCents = Math.round(parseFloat(bidAmount) * 100);
+    const baseCents = bidAmount && !Number.isNaN(typedCents) ? typedCents : sample.currentPriceCents;
+    const amount = Math.max(minNextBid, baseCents + incrementCents);
     setBidAmount((amount / 100).toFixed(2));
   }
 
@@ -118,10 +118,6 @@ export function SampleDetail() {
     } else {
       push({ title: "Couldn't copy automatically", description: window.location.href, tone: "warning" });
     }
-  }
-
-  function handleAutoBidSubmit() {
-    push({ title: "Auto-bid is coming soon", description: "For now, use quick bids or a custom amount.", tone: "info" });
   }
 
   const typedBidCents = Math.round(parseFloat(bidAmount) * 100);
@@ -251,7 +247,7 @@ export function SampleDetail() {
                 <div className="flex gap-2">
                   <input
                     type="number"
-                    step="0.01"
+                    step="0.5"
                     min={minNextBid / 100}
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
@@ -270,37 +266,6 @@ export function SampleDetail() {
                 </div>
                 {error && <p className="text-xs text-live">{error}</p>}
               </form>
-
-              <button
-                type="button"
-                onClick={() => setAutoBidOpen((v) => !v)}
-                className="mt-4 flex w-full items-center justify-between rounded-lg border border-border px-3 py-2.5 text-sm text-muted transition hover:border-primary/40 hover:text-foreground"
-              >
-                <span className="font-medium">Auto-bid (max bid)</span>
-                <ChevronRight size={15} className={`transition-transform ${autoBidOpen ? "rotate-90" : ""}`} />
-              </button>
-              {autoBidOpen && (
-                <div className="mt-2 flex flex-col gap-2 rounded-lg border border-border bg-surface-2 p-3">
-                  <p className="text-xs text-muted">
-                    Set the most you're willing to pay — we'll bid for you, one step at a time, up to that amount.
-                  </p>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={autoBidMax}
-                    onChange={(e) => setAutoBidMax(e.target.value)}
-                    placeholder="Max bid"
-                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAutoBidSubmit}
-                    className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
-                  >
-                    Set auto-bid
-                  </button>
-                </div>
-              )}
             </>
           )}
         </div>

@@ -278,7 +278,7 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
                 <div className="flex w-40 flex-col gap-1.5 rounded-xl border border-border bg-surface p-2 lg:w-52 lg:gap-2 lg:p-3">
                   <input
                     type="number"
-                    step="0.01"
+                    step="0.5"
                     min={minNext / 100}
                     value={customAmount}
                     onChange={(e) => setCustomAmount(e.target.value)}

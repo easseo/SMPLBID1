@@ -1,27 +1,36 @@
 @import "tailwindcss";
 
+/* =========================================================
+   Neo-brutalist theme — bold color blocks, thick borders,
+   hard offset shadows, big geometric type. Adapted from a
+   reference design (black/cream/orange/lime, 3-4px borders,
+   zero-blur drop shadows) into a single cohesive dark theme.
+   ========================================================= */
 @theme {
-  --color-background: #0b0b10;
-  --color-surface: #131319;
-  --color-surface-2: #191a22;
-  --color-border: #26262f;
-  --color-foreground: #f4f3f7;
-  --color-muted: #8b8a97;
-  --color-muted-2: #5f5e6b;
+  --color-background: #0e0e0e;
+  --color-surface: #1a1815;
+  --color-surface-2: #232019;
+  --color-border: #f2e9d6;
+  --color-border-soft: #4a4438;
+  --color-foreground: #f2e9d6;
+  --color-muted: #b8ab8f;
+  --color-muted-2: #756a56;
 
-  --color-primary: #7c5cff;
-  --color-primary-glow: #ff5fa2;
-  --color-accent: #ffb84d;
+  --color-primary: #f26a2e;
+  --color-primary-glow: #ffa53d;
+  --color-accent: #c9f03c;
+  --color-accent-deep: #aad226;
 
-  --color-live: #ff4d5e;
-  --color-success: #37d67a;
-  --color-verified: #4da3ff;
+  --color-live: #ff5a4e;
+  --color-success: #c9f03c;
+  --color-verified: #5b9dff;
 
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Rubik", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Rubik", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   --animate-float-slow: float 9s ease-in-out infinite;
   --animate-float-slower: float 13s ease-in-out infinite;
-  --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-shimmer: shimmer 2.6s linear infinite;
   --animate-pulse-dot: pulseDot 1.6s ease-in-out infinite;
   --animate-glow-pulse: glowPulse 3s ease-in-out infinite;
@@ -43,8 +52,8 @@
     50% { opacity: 0.5; transform: scale(1.4); }
   }
   @keyframes glowPulse {
-    0%, 100% { box-shadow: 0 0 0px 0px rgba(124, 92, 255, 0); }
-    50% { box-shadow: 0 0 24px 2px rgba(124, 92, 255, 0.25); }
+    0%, 100% { box-shadow: 6px 6px 0 var(--color-primary); }
+    50% { box-shadow: 9px 9px 0 var(--color-primary); }
   }
 }
 
@@ -57,20 +66,38 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
+  background-image: radial-gradient(rgba(242, 233, 214, 0.05) 1.4px, transparent 1.4px);
+  background-size: 22px 22px;
 }
 
 * {
   box-sizing: border-box;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
 ::selection {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-background);
+}
+
+/* Thick borders are the signature move — override the bare `border`
+   utility globally (unlayered rules beat Tailwind's own layered
+   utilities regardless of source order). Directional dividers
+   (border-t/b/l/r) are left alone on purpose: those are meant to
+   stay as thin hairlines, not heavy blocks. */
+.border {
+  border-width: 3px;
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-glow), var(--color-primary));
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-glow), var(--color-accent));
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -81,16 +108,39 @@ body {
   background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-glow) 50%, var(--color-primary) 100%);
   background-size: 200% auto;
   animation: var(--animate-shimmer);
+  border: 3px solid var(--color-background);
+  box-shadow: 5px 5px 0 var(--color-foreground);
 }
 
 .glow-shadow {
-  box-shadow: 0 0 40px -10px rgba(124, 92, 255, 0.55);
+  box-shadow: 6px 6px 0 var(--color-primary);
+}
+
+/* Hard, zero-blur offset shadows — the core neo-brutalist device. */
+.nb-shadow {
+  box-shadow: 5px 5px 0 var(--color-foreground);
+}
+.nb-shadow-lg {
+  box-shadow: 8px 8px 0 var(--color-foreground);
+}
+.nb-shadow-primary {
+  box-shadow: 5px 5px 0 var(--color-primary);
+}
+.nb-shadow-accent {
+  box-shadow: 5px 5px 0 var(--color-accent);
+}
+.nb-press {
+  transition: transform 0.12s var(--ease, ease), box-shadow 0.12s var(--ease, ease);
+}
+.nb-press:active {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 2px 0 var(--color-foreground) !important;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: var(--color-border-soft);
   border-radius: 999px;
 }

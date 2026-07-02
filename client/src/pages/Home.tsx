@@ -41,11 +41,6 @@ export function Home() {
   return (
     <div>
       <section className="relative overflow-hidden border-b border-border">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="animate-float-slow absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-primary/20 blur-3xl" />
-          <div className="animate-float-slower absolute -bottom-32 -right-24 h-[32rem] w-[32rem] rounded-full bg-primary-glow/15 blur-3xl" />
-        </div>
-
         <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-14 lg:grid-cols-[1.2fr_1fr] lg:py-20">
           <div className="animate-rise">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
