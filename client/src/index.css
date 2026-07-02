@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0b0b10;
+  --color-surface: #131319;
+  --color-surface-2: #191a22;
+  --color-border: #26262f;
+  --color-foreground: #f4f3f7;
+  --color-muted: #8b8a97;
+  --color-muted-2: #5f5e6b;
+
+  --color-primary: #7c5cff;
+  --color-primary-glow: #ff5fa2;
+  --color-accent: #ffb84d;
+
+  --color-live: #ff4d5e;
+  --color-success: #37d67a;
+  --color-verified: #4da3ff;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --animate-float-slow: float 9s ease-in-out infinite;
+  --animate-float-slower: float 13s ease-in-out infinite;
+  --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-shimmer: shimmer 2.6s linear infinite;
+  --animate-pulse-dot: pulseDot 1.6s ease-in-out infinite;
+  --animate-glow-pulse: glowPulse 3s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-18px) translateX(10px); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 0px 0px rgba(124, 92, 255, 0); }
+    50% { box-shadow: 0 0 24px 2px rgba(124, 92, 255, 0.25); }
+  }
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--color-primary);
+  color: white;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-glow), var(--color-primary));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.shimmer-bg {
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-glow) 50%, var(--color-primary) 100%);
+  background-size: 200% auto;
+  animation: var(--animate-shimmer);
+}
+
+.glow-shadow {
+  box-shadow: 0 0 40px -10px rgba(124, 92, 255, 0.55);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}

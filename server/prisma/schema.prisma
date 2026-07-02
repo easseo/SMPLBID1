@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  bio          String?
+  avatarSeed   String   @default(cuid())
+  verified     Boolean  @default(false)
+  accountType  String   @default("both")
+  createdAt    DateTime @default(now())
+
+  samplesListed Sample[]       @relation("SellerSamples")
+  samplesWon    Sample[]       @relation("WinnerSamples")
+  bids          Bid[]
+  notifications Notification[]
+}
+
+model Sample {
+  id               String    @id @default(cuid())
+  title            String
+  description      String
+  genre            String
+  bpm              Int
+  key              String
+  previewUrl       String
+  fullAudioUrl     String
+  imageUrl         String?
+  waveform         String
+  startingPriceCents Int
+  currentPriceCents  Int
+  buyNowPriceCents   Int?
+  minIncrementCents  Int      @default(100)
+  antiSnipeSeconds   Int      @default(30)
+  status           String    @default("live")
+  startTime        DateTime  @default(now())
+  endTime          DateTime
+  createdAt        DateTime  @default(now())
+
+  sellerId   String
+  seller     User      @relation("SellerSamples", fields: [sellerId], references: [id])
+  winnerId   String?
+  winner     User?     @relation("WinnerSamples", fields: [winnerId], references: [id])
+
+  bids          Bid[]
+  notifications Notification[]
+  certificate   Certificate?
+}
+
+model Bid {
+  id         String   @id @default(cuid())
+  amountCents Int
+  createdAt  DateTime @default(now())
+
+  sampleId String
+  sample   Sample @relation(fields: [sampleId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+
+  @@index([sampleId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId   String
+  user     User    @relation(fields: [userId], references: [id])
+  sampleId String?
+  sample   Sample? @relation(fields: [sampleId], references: [id])
+}
+
+model Certificate {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  issuedAt    DateTime @default(now())
+  contentHash String
+
+  sampleId String @unique
+  sample   Sample @relation(fields: [sampleId], references: [id])
+}
