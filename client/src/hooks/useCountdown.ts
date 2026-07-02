@@ -24,5 +24,14 @@ export function useCountdown(endTime: string | Date) {
   else if (minutes > 0) label = `${minutes}m ${seconds}s`;
   else label = `${seconds}s`;
 
-  return { remainingMs, label, isEnded: remainingMs <= 0, isUrgent: remainingMs > 0 && remainingMs <= 60_000 };
+  return {
+    remainingMs,
+    label,
+    days,
+    hours,
+    minutes,
+    seconds,
+    isEnded: remainingMs <= 0,
+    isUrgent: remainingMs > 0 && remainingMs <= 60_000,
+  };
 }

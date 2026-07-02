@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ShieldCheck, Copy, Check } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
-import { api, centsToDisplay } from "../lib/api";
+import { api, centsToDisplay, ApiError } from "../lib/api";
 import { VerifiedBadge } from "../components/VerifiedBadge";
-import { copyToClipboard } from "../lib/clipboard";
-import { useToast } from "../context/ToastContext";
 
 interface CertificateData {
   code: string;
@@ -25,29 +23,24 @@ interface CertificateData {
 
 export function CertificatePage() {
   const { code } = useParams<{ code: string }>();
-  const { push } = useToast();
   const [cert, setCert] = useState<CertificateData | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
     if (!code) return;
     api
       .get<{ certificate: CertificateData }>(`/certificates/${code}`)
       .then((res) => setCert(res.certificate))
-      .catch(() => setNotFound(true));
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 403) setForbidden(true);
+        else setNotFound(true);
+      });
   }, [code]);
 
-  async function copyLink() {
-    const ok = await copyToClipboard(window.location.href);
-    if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } else {
-      push({ title: "Couldn't copy automatically", description: window.location.href, tone: "warning" });
-    }
+  if (forbidden) {
+    return <p className="py-20 text-center text-sm text-muted">Only the winner of this auction can view its certificate.</p>;
   }
-
   if (notFound) {
     return <p className="py-20 text-center text-sm text-muted">Certificate not found.</p>;
   }
@@ -103,13 +96,6 @@ export function CertificatePage() {
         </p>
 
         <div className="mt-6 flex gap-2">
-          <button
-            onClick={copyLink}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium transition hover:border-primary/50"
-          >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
-            {copied ? "Copied!" : "Copy share link"}
-          </button>
           <Link to={`/sample/${cert.sample.id}`} className="inline-flex items-center rounded-lg border border-border px-3 py-2 text-xs font-medium transition hover:border-primary/50">
             View sample
           </Link>

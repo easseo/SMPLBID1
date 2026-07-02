@@ -59,7 +59,7 @@ export function Profile() {
   const list = tab === "listed" ? data.listed : data.won;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex items-center gap-4">
         <Avatar seed={data.user.avatarSeed} username={data.user.username} size={64} />
         <div>

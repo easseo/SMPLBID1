@@ -33,6 +33,8 @@ export interface SampleSummary {
   winner?: { id: string; username: string; avatarSeed: string } | null;
   bidCount?: number;
   canDownloadFull: boolean;
+  hasStems?: boolean;
+  hasMidi?: boolean;
   certificateCode?: string;
 }
 
@@ -58,4 +60,11 @@ export interface LeaderboardEntry {
   wins?: number;
   earnedCents?: number;
   sales?: number;
+}
+
+export interface ContestedSample {
+  id: string;
+  title: string;
+  bidCount: number;
+  currentPriceCents: number;
 }

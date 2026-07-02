@@ -47,6 +47,17 @@ function publicUser(user: {
   };
 }
 
+const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
+
+router.get("/username-available", async (req, res) => {
+  const username = typeof req.query.u === "string" ? req.query.u.trim() : "";
+  if (username.length < 3 || username.length > 24 || !USERNAME_REGEX.test(username)) {
+    return res.json({ available: false, reason: "invalid" });
+  }
+  const existing = await prisma.user.findUnique({ where: { username }, select: { id: true } });
+  res.json({ available: !existing, reason: existing ? "taken" : null });
+});
+
 router.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {

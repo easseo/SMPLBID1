@@ -50,6 +50,13 @@ function mimeForFile(filePath: string): string {
 const PREVIEW_MIMES = new Set(["audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/m4a"]);
 const WAV_MIMES = new Set(["audio/wav", "audio/wave", "audio/x-wav", "audio/vnd.wave"]);
 const IMAGE_MIMES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ZIP_MIMES = new Set(["application/zip", "application/x-zip-compressed"]);
+
+// ZIP local-file-header magic. Declared Content-Type alone is attacker-chosen,
+// so stored archives must also start with a real ZIP signature.
+function isZipBuffer(buffer: Buffer): boolean {
+  return buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04;
+}
 
 // The extension used to persist an uploaded file must never come from
 // user-controlled input (a multipart part's filename/originalname is fully
@@ -73,6 +80,8 @@ const SAFE_EXTENSIONS: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
   "image/webp": ".webp",
+  "application/zip": ".zip",
+  "application/x-zip-compressed": ".zip",
 };
 
 const storage = multer.diskStorage({
@@ -101,6 +110,10 @@ const upload = multer({
       cb(new Error("Cover image must be a JPEG, PNG, or WEBP file"));
       return;
     }
+    if ((file.fieldname === "stems" || file.fieldname === "midi") && !ZIP_MIMES.has(file.mimetype)) {
+      cb(new Error(`${file.fieldname === "stems" ? "Stems" : "MIDI"} must be a ZIP archive`));
+      return;
+    }
     cb(null, true);
   },
 });
@@ -109,6 +122,8 @@ const uploadFields = upload.fields([
   { name: "preview", maxCount: 1 },
   { name: "full", maxCount: 1 },
   { name: "image", maxCount: 1 },
+  { name: "stems", maxCount: 1 },
+  { name: "midi", maxCount: 1 },
 ]);
 
 const createSchema = z
@@ -156,6 +171,8 @@ function serializeSample(sample: any, viewerId?: string) {
       : undefined,
     bidCount: sample._count?.bids ?? undefined,
     canDownloadFull: Boolean(isSeller || (isWinner && sample.status === "ended")),
+    hasStems: Boolean(sample.stemsUrl),
+    hasMidi: Boolean(sample.midiUrl),
     certificateCode: sample.certificate?.code,
   };
 }
@@ -207,16 +224,26 @@ router.post("/", requireAuth, async (req, res) => {
   }
 
   const files = req.files as
-    | { preview?: Express.Multer.File[]; full?: Express.Multer.File[]; image?: Express.Multer.File[] }
+    | {
+        preview?: Express.Multer.File[];
+        full?: Express.Multer.File[];
+        image?: Express.Multer.File[];
+        stems?: Express.Multer.File[];
+        midi?: Express.Multer.File[];
+      }
     | undefined;
   const previewFile = files?.preview?.[0];
   const fullFile = files?.full?.[0];
   const imageFile = files?.image?.[0];
+  const stemsFile = files?.stems?.[0];
+  const midiFile = files?.midi?.[0];
 
   async function cleanup() {
     if (previewFile) await fsp.unlink(previewFile.path).catch(() => {});
     if (fullFile) await fsp.unlink(fullFile.path).catch(() => {});
     if (imageFile) await fsp.unlink(imageFile.path).catch(() => {});
+    if (stemsFile) await fsp.unlink(stemsFile.path).catch(() => {});
+    if (midiFile) await fsp.unlink(midiFile.path).catch(() => {});
   }
 
   const parsed = createSchema.safeParse(req.body);
@@ -268,11 +295,22 @@ router.post("/", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Cover image file is not a valid JPEG, PNG, or WEBP" });
   }
 
+  for (const [archive, label] of [[stemsFile, "Stems"], [midiFile, "MIDI"]] as const) {
+    if (!archive) continue;
+    const buffer = await fsp.readFile(archive.path);
+    if (!isZipBuffer(buffer)) {
+      await cleanup();
+      return res.status(400).json({ error: `${label} file is not a valid ZIP archive` });
+    }
+  }
+
   const data = parsed.data;
   const waveform = buildWaveform(fullBuffer);
   const previewUrl = `/uploads/${previewFile.filename}`;
   const fullAudioUrl = `/uploads/${fullFile.filename}`;
   const imageUrl = `/uploads/${imageFile.filename}`;
+  const stemsUrl = stemsFile ? `/uploads/${stemsFile.filename}` : null;
+  const midiUrl = midiFile ? `/uploads/${midiFile.filename}` : null;
   const endTime = new Date(Date.now() + data.durationMinutes * 60_000);
 
   const sample = await prisma.sample.create({
@@ -285,6 +323,8 @@ router.post("/", requireAuth, async (req, res) => {
       imageUrl,
       previewUrl,
       fullAudioUrl,
+      stemsUrl,
+      midiUrl,
       waveform: JSON.stringify(waveform),
       startingPriceCents: data.startingPriceCents,
       currentPriceCents: data.startingPriceCents,
@@ -325,5 +365,31 @@ router.get("/:id/full", requireAuth, async (req, res) => {
   res.setHeader("Content-Length", String(stat.size));
   fs.createReadStream(filePath).pipe(res);
 });
+
+// Stems/MIDI archives share the full file's access rule: seller always, winner
+// only after the auction has ended.
+function serveArchive(kind: "stems" | "midi") {
+  return async (req: Parameters<Parameters<typeof router.get>[1]>[0], res: Parameters<Parameters<typeof router.get>[1]>[1]) => {
+    const sample = await prisma.sample.findUnique({ where: { id: req.params.id } });
+    if (!sample) return res.status(404).json({ error: "Sample not found" });
+    const isSeller = req.userId === sample.sellerId;
+    const isWinner = req.userId === sample.winnerId && sample.status === "ended";
+    if (!isSeller && !isWinner) {
+      return res.status(403).json({ error: `You do not have access to the ${kind} file` });
+    }
+    const url = kind === "stems" ? sample.stemsUrl : sample.midiUrl;
+    if (!url) return res.status(404).json({ error: `This sample has no ${kind} archive` });
+    const filePath = path.join(UPLOAD_DIR, path.basename(url));
+    const stat = await fsp.stat(filePath).catch(() => null);
+    if (!stat) return res.status(404).json({ error: `${kind} file missing` });
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Length", String(stat.size));
+    res.setHeader("Content-Disposition", `attachment; filename="${sample.id}-${kind}.zip"`);
+    fs.createReadStream(filePath).pipe(res);
+  };
+}
+
+router.get("/:id/stems", requireAuth, serveArchive("stems"));
+router.get("/:id/midi", requireAuth, serveArchive("midi"));
 
 export default router;

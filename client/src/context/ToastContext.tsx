@@ -16,7 +16,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 const TONE_STYLES: Record<Toast["tone"], string> = {
   info: "border-primary/40 bg-surface-2",
   success: "border-success/50 bg-surface-2",
-  warning: "border-live/50 bg-surface-2",
+  warning: "border-error/50 bg-surface-2",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {

@@ -24,7 +24,7 @@ export function Home() {
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
 
   useEffect(() => {
-    api.get<{ samples: SampleSummary[] }>("/samples?status=live").then((res) => setSamples(res.samples.slice(0, 6)));
+    api.get<{ samples: SampleSummary[] }>("/samples?status=live").then((res) => setSamples(res.samples.slice(0, 3)));
 
     const socket = getSocket();
     const handler = (event: ActivityEvent) => {
@@ -41,7 +41,7 @@ export function Home() {
   return (
     <div>
       <section className="relative overflow-hidden border-b border-border">
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-14 lg:grid-cols-[1.2fr_1fr] lg:py-20">
+        <div className="relative mx-auto grid max-w-[1800px] gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:px-8 lg:py-20">
           <div className="animate-rise">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
               <span className="relative flex h-1.5 w-1.5">
@@ -55,7 +55,7 @@ export function Home() {
               Bid. Win. <span className="gradient-text">Own forever.</span>
             </h1>
 
-            <div className="animate-glow-pulse mt-6 max-w-xl rounded-2xl border-l-4 border-primary bg-primary/10 px-5 py-4">
+            <div className="animate-glow-pulse mt-6 max-w-xl rounded-2xl border border-white/15 bg-white/5 px-5 py-4 backdrop-blur-md">
               <p className="text-3xl font-bold leading-tight tracking-tight text-foreground md:text-4xl">
                 <span className="gradient-text">Exclusive</span>, one-of-one audio samples.
               </p>
@@ -127,10 +127,13 @@ export function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-10">
+      <section className="mx-auto max-w-[1800px] px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-xl font-bold">Ending soon</h2>
-          <Link to="/arena" className="text-sm font-medium text-primary hover:underline">
+          <Link
+            to="/arena"
+            className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-5 py-2.5 text-base font-semibold text-primary transition hover:scale-[1.03] hover:bg-primary/20"
+          >
             View all →
           </Link>
         </div>

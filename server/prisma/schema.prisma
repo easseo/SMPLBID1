@@ -33,6 +33,8 @@ model Sample {
   key              String
   previewUrl       String
   fullAudioUrl     String
+  stemsUrl         String?
+  midiUrl          String?
   imageUrl         String?
   waveform         String
   startingPriceCents Int

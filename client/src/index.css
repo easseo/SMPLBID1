@@ -1,29 +1,32 @@
 @import "tailwindcss";
 
 /* =========================================================
-   Neo-brutalist theme — bold color blocks, thick borders,
-   hard offset shadows, big geometric type. Adapted from a
-   reference design (black/cream/orange/lime, 3-4px borders,
-   zero-blur drop shadows) into a single cohesive dark theme.
+   Monochrome Premium theme — deep charcoal, matte panels,
+   thin hairlines, brushed-gold accents. The base palette
+   stays strictly grayscale; gold is reserved for the single
+   "highlight" role (CTAs, chrome text, badges). A muted rose
+   is kept as a dedicated `error` token since form validation
+   still needs to read as "wrong" independent of the accent.
    ========================================================= */
 @theme {
-  --color-background: #0e0e0e;
-  --color-surface: #1a1815;
-  --color-surface-2: #232019;
-  --color-border: #f2e9d6;
-  --color-border-soft: #4a4438;
-  --color-foreground: #f2e9d6;
-  --color-muted: #b8ab8f;
-  --color-muted-2: #756a56;
+  --color-background: #0d0d0d;
+  --color-surface: #1a1a1a;
+  --color-surface-2: #232323;
+  --color-border: rgba(255, 255, 255, 0.14);
+  --color-border-soft: rgba(255, 255, 255, 0.08);
+  --color-foreground: #f5f5f6;
+  --color-muted: #9a9a9f;
+  --color-muted-2: #636368;
 
-  --color-primary: #f26a2e;
-  --color-primary-glow: #ffa53d;
-  --color-accent: #c9f03c;
-  --color-accent-deep: #aad226;
+  --color-primary: #c9a227;
+  --color-primary-glow: #f5d889;
+  --color-accent: #e0be6a;
+  --color-accent-deep: #9c7a1f;
 
-  --color-live: #ff5a4e;
-  --color-success: #c9f03c;
-  --color-verified: #5b9dff;
+  --color-live: #f5f5f6;
+  --color-success: #3ecf6e;
+  --color-verified: #b7bcc7;
+  --color-error: #c97b7b;
 
   --font-sans: "Rubik", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-display: "Rubik", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -31,9 +34,9 @@
   --animate-float-slow: float 9s ease-in-out infinite;
   --animate-float-slower: float 13s ease-in-out infinite;
   --animate-rise: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  --animate-shimmer: shimmer 2.6s linear infinite;
+  --animate-shimmer: shimmer 3.2s linear infinite;
   --animate-pulse-dot: pulseDot 1.6s ease-in-out infinite;
-  --animate-glow-pulse: glowPulse 3s ease-in-out infinite;
+  --animate-glow-pulse: glowPulse 3.4s ease-in-out infinite;
 
   @keyframes float {
     0%, 100% { transform: translateY(0) translateX(0); }
@@ -52,8 +55,8 @@
     50% { opacity: 0.5; transform: scale(1.4); }
   }
   @keyframes glowPulse {
-    0%, 100% { box-shadow: 6px 6px 0 var(--color-primary); }
-    50% { box-shadow: 9px 9px 0 var(--color-primary); }
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+    50% { box-shadow: 0 0 26px rgba(255, 255, 255, 0.14); }
   }
 }
 
@@ -68,7 +71,7 @@ body {
   font-family: var(--font-sans);
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
-  background-image: radial-gradient(rgba(242, 233, 214, 0.05) 1.4px, transparent 1.4px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1.4px, transparent 1.4px);
   background-size: 22px 22px;
 }
 
@@ -78,7 +81,7 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 
@@ -87,54 +90,28 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-background);
 }
 
-/* Thick borders are the signature move — override the bare `border`
-   utility globally (unlayered rules beat Tailwind's own layered
-   utilities regardless of source order). Directional dividers
-   (border-t/b/l/r) are left alone on purpose: those are meant to
-   stay as thin hairlines, not heavy blocks. */
-.border {
-  border-width: 3px;
-}
-
 .gradient-text {
-  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-glow), var(--color-accent));
+  background: linear-gradient(100deg, #8a6a1f 0%, #f5d889 25%, #c9a227 50%, #f5d889 75%, #8a6a1f 100%);
   background-size: 200% auto;
+  animation: var(--animate-shimmer);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
+/* Brushed-gold CTA — a subtle metallic gold gradient with a crisp
+   warm hairline and black text, per the "polished metal" brief. */
 .shimmer-bg {
-  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-glow) 50%, var(--color-primary) 100%);
+  background: linear-gradient(90deg, #a9822a 0%, #f5d889 25%, #d9b54a 50%, #f5d889 75%, #a9822a 100%);
   background-size: 200% auto;
   animation: var(--animate-shimmer);
-  border: 3px solid var(--color-background);
-  box-shadow: 5px 5px 0 var(--color-foreground);
+  border: 1px solid rgba(245, 216, 137, 0.6);
+  color: #0d0d0d;
+  box-shadow: 0 6px 24px rgba(245, 216, 137, 0.12);
 }
 
 .glow-shadow {
-  box-shadow: 6px 6px 0 var(--color-primary);
-}
-
-/* Hard, zero-blur offset shadows — the core neo-brutalist device. */
-.nb-shadow {
-  box-shadow: 5px 5px 0 var(--color-foreground);
-}
-.nb-shadow-lg {
-  box-shadow: 8px 8px 0 var(--color-foreground);
-}
-.nb-shadow-primary {
-  box-shadow: 5px 5px 0 var(--color-primary);
-}
-.nb-shadow-accent {
-  box-shadow: 5px 5px 0 var(--color-accent);
-}
-.nb-press {
-  transition: transform 0.12s var(--ease, ease), box-shadow 0.12s var(--ease, ease);
-}
-.nb-press:active {
-  transform: translate(3px, 3px);
-  box-shadow: 2px 2px 0 var(--color-foreground) !important;
+  box-shadow: 0 10px 34px rgba(245, 216, 137, 0.16);
 }
 
 .scrollbar-thin::-webkit-scrollbar {

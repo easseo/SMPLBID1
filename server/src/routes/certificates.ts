@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import { requireAuth } from "../lib/auth.js";
 
 const router = Router();
 
-router.get("/:code", async (req, res) => {
+router.get("/:code", requireAuth, async (req, res) => {
   const certificate = await prisma.certificate.findUnique({
     where: { code: req.params.code },
     include: {
@@ -13,6 +14,9 @@ router.get("/:code", async (req, res) => {
     },
   });
   if (!certificate) return res.status(404).json({ error: "Certificate not found" });
+  if (certificate.sample.winnerId !== req.userId) {
+    return res.status(403).json({ error: "Only the winner can view this certificate" });
+  }
 
   res.json({
     certificate: {

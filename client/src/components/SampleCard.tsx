@@ -1,14 +1,45 @@
-import { Link } from "react-router-dom";
-import { Flame, Gavel } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Flame, Gavel, Zap } from "lucide-react";
 import type { SampleSummary } from "../lib/types";
-import { centsToDisplay } from "../lib/api";
+import { api, centsToDisplay, ApiError } from "../lib/api";
 import { Waveform } from "./Waveform";
 import { CountdownBadge } from "./CountdownBadge";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { Avatar } from "./Avatar";
 import { avatarGradient } from "../lib/avatar";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 export function SampleCard({ sample }: { sample: SampleSummary }) {
+  const { user } = useAuth();
+  const { push } = useToast();
+  const navigate = useNavigate();
+  const [buying, setBuying] = useState(false);
+
+  const isSeller = Boolean(user && sample.seller?.id === user.id);
+  const canBuyNow = Boolean(sample.buyNowPriceCents) && sample.status === "live" && !isSeller;
+
+  async function handleBuyNow(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    if (buying) return;
+    setBuying(true);
+    try {
+      await api.post(`/samples/${sample.id}/bids`, { amountCents: sample.buyNowPriceCents });
+      push({ title: "You bought it!", description: sample.title, tone: "success" });
+      navigate(`/sample/${sample.id}`);
+    } catch (err) {
+      push({ title: "Couldn't complete purchase", description: err instanceof ApiError ? err.message : "Try again", tone: "warning" });
+    } finally {
+      setBuying(false);
+    }
+  }
+
   return (
     <Link
       to={`/sample/${sample.id}`}
@@ -25,11 +56,12 @@ export function SampleCard({ sample }: { sample: SampleSummary }) {
         ) : (
           <div className="h-full w-full" style={{ background: avatarGradient(sample.id) }} />
         )}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-        {sample.buyNowPriceCents && sample.status === "live" && (
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/60" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent" />
+        {sample.status === "live" && (
           <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-accent/90 px-2 py-1 text-[10px] font-semibold text-background">
             <Flame size={11} />
-            Buy now
+            {sample.buyNowPriceCents ? "Bid + Buy Now Option" : "Bid Option"}
           </div>
         )}
       </div>
@@ -76,13 +108,17 @@ export function SampleCard({ sample }: { sample: SampleSummary }) {
             </p>
             <p className="text-lg font-bold text-foreground">{centsToDisplay(sample.currentPriceCents)}</p>
           </div>
-          {sample.buyNowPriceCents && sample.status === "live" && (
-            <div className="flex items-center gap-1 rounded-full bg-accent/10 px-2 py-1 text-[10px] font-semibold text-accent">
-              <Flame size={11} />
-              {centsToDisplay(sample.buyNowPriceCents)}
-            </div>
-          )}
         </div>
+
+        {canBuyNow && (
+          <button
+            onClick={handleBuyNow}
+            disabled={buying}
+            className="shimmer-bg mt-3 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold shadow-lg transition hover:scale-[1.02] disabled:opacity-50"
+          >
+            <Zap size={13} /> {buying ? "Buying…" : `Buy It Now — ${centsToDisplay(sample.buyNowPriceCents!)}`}
+          </button>
+        )}
       </div>
     </Link>
   );

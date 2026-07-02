@@ -103,7 +103,7 @@ export function AudioPlayer({ src, waveform, watermark = true }: Props) {
       {watermark && (
         <div className="flex shrink-0 items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted" title="Previews carry an inaudible-to-most watermark tone to deter piracy">
           <ShieldCheck size={12} className="text-verified" />
-          Watermarked preview
+          Preview up to 15 seconds
         </div>
       )}
     </div>

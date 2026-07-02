@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { Gavel, ShieldCheck, Zap, ExternalLink, Share2, Check } from "lucide-react";
+import { Gavel, ShieldCheck, Zap, ExternalLink, Share2, Check, Download, Crown } from "lucide-react";
 import { api, centsToDisplay, ApiError } from "../lib/api";
 import { getSocket } from "../lib/socket";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { useCountdown } from "../hooks/useCountdown";
 import { copyToClipboard } from "../lib/clipboard";
 import type { BidEntry, SampleSummary } from "../lib/types";
 import { AudioPlayer } from "../components/AudioPlayer";
-import { CountdownBadge } from "../components/CountdownBadge";
+import { CountdownBadge, CountdownClock } from "../components/CountdownBadge";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { Avatar } from "../components/Avatar";
 
@@ -75,7 +74,6 @@ export function SampleDetail() {
 
   const isHighestBidder = Boolean(user && bids[0]?.user.id === user.id);
   const isSeller = sample?.seller?.id === user?.id;
-  const countdown = useCountdown(sample?.endTime ?? new Date());
 
   async function placeBid(amountCents: number) {
     if (!sample) return;
@@ -93,9 +91,18 @@ export function SampleDetail() {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    // Empty input = bid the minimum (the starting price itself on the first bid).
+    if (!bidAmount.trim()) {
+      placeBid(minNextBid);
+      return;
+    }
     const cents = Math.round(parseFloat(bidAmount) * 100);
     if (!cents || Number.isNaN(cents)) {
       setError("Enter a valid amount");
+      return;
+    }
+    if (cents < minNextBid) {
+      setError(`Bid must be at least ${centsToDisplay(minNextBid)}`);
       return;
     }
     placeBid(cents);
@@ -141,11 +148,11 @@ export function SampleDetail() {
   const audioSrc = sample.canDownloadFull ? `/api/samples/${sample.id}/full` : `/api/samples/${sample.id}/preview`;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">{sample.title}</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="text-3xl font-bold lg:text-4xl">{sample.title}</h1>
+          <p className="mt-1 text-sm text-muted lg:text-base">
             {sample.genre} · {sample.bpm} BPM · {sample.key}
           </p>
         </div>
@@ -162,7 +169,15 @@ export function SampleDetail() {
         <AudioPlayer src={audioSrc} waveform={sample.waveform} watermark={!sample.canDownloadFull} />
       </div>
 
-      <p className="mt-6 text-sm leading-relaxed text-muted">{sample.description}</p>
+      <div className="mt-6 space-y-2">
+        {!sample.description.startsWith("A one-of-one exclusive sample.") && (
+          <p className="text-sm leading-relaxed text-muted">{sample.description}</p>
+        )}
+        <p className="text-sm leading-relaxed text-muted-2">
+          A one-of-one exclusive sample. Once sold, it's gone forever — no re-sale, no re-use by anyone else. This Is
+          Why We Are Special ❤️
+        </p>
+      </div>
 
       <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface p-3">
         {sample.seller && (
@@ -180,18 +195,21 @@ export function SampleDetail() {
       </div>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-surface p-5">
-          <p className="text-xs uppercase tracking-wide text-muted-2">{ended ? "Final price" : "Current price"}</p>
-          <p className="mt-1 text-4xl font-bold">{centsToDisplay(sample.currentPriceCents)}</p>
-          <div className="mt-1 flex items-center justify-between text-xs text-muted">
-            <span>
-              {bids.length} bid{bids.length === 1 ? "" : "s"}
-            </span>
-            {!ended && <span className="font-mono">{countdown.label}</span>}
-          </div>
+        <div className="rounded-2xl border border-border bg-surface p-5 lg:p-7">
+          <p className="text-xs uppercase tracking-wide text-muted-2 lg:text-sm">{ended ? "Final price" : "Current price"}</p>
+          <p className="mt-1 text-4xl font-bold lg:text-6xl">{centsToDisplay(sample.currentPriceCents)}</p>
+          <p className="mt-1 text-xs text-muted lg:text-sm">
+            {bids.length} bid{bids.length === 1 ? "" : "s"}
+          </p>
+
+          {!ended && (
+            <div className="mt-3">
+              <CountdownClock endTime={sample.endTime} ended={ended} />
+            </div>
+          )}
 
           {!ended && isHighestBidder && (
-            <div className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-success/30 bg-success/10 py-2.5 text-sm font-semibold text-success">
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-success/30 bg-success/10 py-2.5 text-sm font-semibold text-success lg:py-3.5 lg:text-base">
               <span className="h-2 w-2 rounded-full bg-success" />
               You are winning
             </div>
@@ -201,21 +219,57 @@ export function SampleDetail() {
             <button
               onClick={() => placeBid(sample.buyNowPriceCents!)}
               disabled={submitting}
-              className="shimmer-bg mt-4 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.01] disabled:opacity-50"
+              className="shimmer-bg mt-4 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.01] disabled:opacity-50 lg:py-4 lg:text-base"
             >
               <Zap size={15} /> Buy Now — {centsToDisplay(sample.buyNowPriceCents)}
             </button>
           )}
 
           {ended ? (
-            sample.winner ? (
+            sample.winner && user && sample.winner.id === user.id ? (
+              <div className="mt-4 rounded-lg bg-success px-3 py-3 text-sm text-white">
+                <p className="flex items-center gap-1.5 font-semibold">
+                  <span className="h-2 w-2 rounded-full bg-white" /> You won this auction! 🎉
+                </p>
+                <div className="mt-3 flex flex-col gap-2">
+                  <a
+                    href={`/api/samples/${sample.id}/full`}
+                    download
+                    className="shimmer-bg glow-shadow flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition hover:scale-[1.02]"
+                  >
+                    <Download size={14} /> Download full-quality file
+                  </a>
+                  {sample.hasStems && (
+                    <a
+                      href={`/api/samples/${sample.id}/stems`}
+                      download
+                      className="flex items-center justify-center gap-2 rounded-lg border border-white/40 bg-white/10 px-3 py-2.5 text-sm font-bold transition hover:bg-white/20"
+                    >
+                      <Download size={14} /> Download stems (ZIP)
+                    </a>
+                  )}
+                  {sample.hasMidi && (
+                    <a
+                      href={`/api/samples/${sample.id}/midi`}
+                      download
+                      className="flex items-center justify-center gap-2 rounded-lg border border-white/40 bg-white/10 px-3 py-2.5 text-sm font-bold transition hover:bg-white/20"
+                    >
+                      <Download size={14} /> Download MIDI (ZIP)
+                    </a>
+                  )}
+                  {sample.certificateCode && (
+                    <Link
+                      to={`/certificate/${sample.certificateCode}`}
+                      className="flex items-center justify-center gap-2 rounded-lg border border-white/40 bg-white/10 px-3 py-2.5 text-sm font-bold transition hover:bg-white/20"
+                    >
+                      View ownership certificate <ExternalLink size={15} />
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ) : sample.winner ? (
               <div className="mt-4 rounded-lg border border-success/30 bg-success/10 px-3 py-3 text-sm">
                 <p className="font-semibold text-success">Sold to {sample.winner.username}</p>
-                {sample.certificateCode && (
-                  <Link to={`/certificate/${sample.certificateCode}`} className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                    View ownership certificate <ExternalLink size={11} />
-                  </Link>
-                )}
               </div>
             ) : (
               <p className="mt-4 text-sm text-muted">This auction ended with no bids.</p>
@@ -236,7 +290,7 @@ export function SampleDetail() {
                     key={inc}
                     type="button"
                     onClick={() => applyQuickIncrement(inc)}
-                    className="rounded-lg border border-border bg-surface-2 py-2 text-sm font-semibold transition hover:border-primary/50"
+                    className="rounded-lg border border-border bg-surface-2 py-2 text-sm font-semibold transition hover:border-primary/50 lg:py-3 lg:text-base"
                   >
                     +{centsToDisplay(inc)}
                   </button>
@@ -252,40 +306,79 @@ export function SampleDetail() {
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
                     placeholder={`Min ${centsToDisplay(minNextBid)}`}
-                    className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                    className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none focus:border-primary lg:py-3.5 lg:text-base"
                   />
                   <button
                     type="submit"
                     disabled={submitting || isHighestBidder}
-                    className="shimmer-bg shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:scale-[1.02] disabled:opacity-50"
+                    className="shimmer-bg shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:scale-[1.02] disabled:opacity-50 lg:px-6 lg:py-3.5 lg:text-base"
                   >
                     <span className="inline-flex items-center gap-1.5">
                       <Gavel size={14} /> {bidButtonLabel}
                     </span>
                   </button>
                 </div>
-                {error && <p className="text-xs text-live">{error}</p>}
+                {error && <p className="text-xs text-error">{error}</p>}
               </form>
             </>
           )}
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-5">
-          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-2">
-            <ShieldCheck size={13} /> Bid history
+        <div className="rounded-2xl border border-border bg-surface p-5 lg:p-7">
+          <p className="mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-2 lg:mb-4 lg:text-sm">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck size={13} className="lg:hidden" />
+              <ShieldCheck size={15} className="hidden lg:block" /> Bid history
+            </span>
+            <span className="text-muted-2">
+              {bids.length} bid{bids.length === 1 ? "" : "s"}
+            </span>
           </p>
-          <ul className="scrollbar-thin max-h-72 space-y-2 overflow-y-auto">
-            {bids.length === 0 && <li className="text-sm text-muted">No bids yet — be the first.</li>}
-            {bids.map((b) => (
-              <li key={b.id} className="flex items-center gap-2 text-sm">
-                <Avatar seed={b.user.avatarSeed} username={b.user.username} size={22} />
-                <span className="flex-1 truncate">{b.user.username}</span>
-                <span className="font-semibold">{centsToDisplay(b.amountCents)}</span>
-                <span className="w-20 shrink-0 text-right text-xs text-muted-2">
-                  {formatDistanceToNow(new Date(b.createdAt), { addSuffix: true })}
-                </span>
-              </li>
-            ))}
+          <ul className="scrollbar-thin max-h-80 space-y-1.5 overflow-y-auto lg:max-h-[24rem] lg:space-y-2">
+            {bids.length === 0 && <li className="text-sm text-muted lg:text-base">No bids yet — be the first.</li>}
+            {bids.map((b, i) => {
+              const isLeader = i === 0;
+              const isYou = Boolean(user && b.user.id === user.id);
+              const delta = i < bids.length - 1 ? b.amountCents - bids[i + 1].amountCents : null;
+              return (
+                <li
+                  key={b.id}
+                  className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition lg:gap-3 lg:px-3.5 lg:py-3 lg:text-base ${
+                    isLeader ? "border border-primary/30 bg-primary/10" : "hover:bg-surface-2"
+                  }`}
+                >
+                  <span className="relative shrink-0">
+                    <span className="lg:hidden">
+                      <Avatar seed={b.user.avatarSeed} username={b.user.username} size={26} />
+                    </span>
+                    <span className="hidden lg:block">
+                      <Avatar seed={b.user.avatarSeed} username={b.user.username} size={34} />
+                    </span>
+                    {isLeader && (
+                      <>
+                        <Crown size={12} className="absolute -right-1 -top-1.5 rotate-12 text-primary lg:hidden" fill="currentColor" />
+                        <Crown size={15} className="absolute -right-1 -top-2 hidden rotate-12 text-primary lg:block" fill="currentColor" />
+                      </>
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5 truncate font-medium">
+                      {b.user.username}
+                      {isYou && <span className="shrink-0 rounded-full bg-surface-2 px-1.5 py-0.5 text-[9px] font-semibold text-muted lg:text-[10px]">You</span>}
+                    </span>
+                    <span className="text-[11px] text-muted-2 lg:text-xs">
+                      {formatDistanceToNow(new Date(b.createdAt), { addSuffix: true })}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className={`block font-semibold tabular-nums ${isLeader ? "text-primary" : ""}`}>
+                      {centsToDisplay(b.amountCents)}
+                    </span>
+                    {delta !== null && <span className="block text-[11px] text-success lg:text-xs">+{centsToDisplay(delta)}</span>}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -295,7 +388,7 @@ export function SampleDetail() {
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-muted transition hover:border-primary/40 hover:text-foreground"
       >
         {shareCopied ? <Check size={15} className="text-success" /> : <Share2 size={15} />}
-        {shareCopied ? "Link copied" : "Share this drop"}
+        {shareCopied ? "Link copied" : "Share This Sample"}
       </button>
     </div>
   );

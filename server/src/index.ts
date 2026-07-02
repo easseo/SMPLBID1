@@ -22,6 +22,8 @@ import leaderboardRoutes from "./routes/leaderboard.js";
 import notificationRoutes from "./routes/notifications.js";
 import certificateRoutes from "./routes/certificates.js";
 import userRoutes from "./routes/users.js";
+import dashboardRoutes from "./routes/dashboard.js";
+import vaultRoutes from "./routes/vault.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 4000);
@@ -76,6 +78,8 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/vault", vaultRoutes);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 

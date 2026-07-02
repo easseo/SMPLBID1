@@ -1,8 +1,11 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { ShoppingBag, Sparkles, Layers } from "lucide-react";
+import { ShoppingBag, Sparkles, Layers, Check, X, Loader2 } from "lucide-react";
 import { useAuth, ApiError } from "../context/AuthContext";
+import { api } from "../lib/api";
 import type { AccountType } from "../lib/types";
+
+type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 
 const ACCOUNT_TYPES: { value: AccountType; label: string; description: string; icon: React.ReactNode }[] = [
   { value: "buyer", label: "Buyer", description: "Bid & collect", icon: <ShoppingBag size={16} /> },
@@ -26,8 +29,28 @@ export function AuthPage() {
   const [accountType, setAccountType] = useState<AccountType>("both");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
   const { login, register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (mode !== "register" || username.length === 0) {
+      setUsernameStatus("idle");
+      return;
+    }
+    if (username.length < 3 || username.length > 24 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      setUsernameStatus("invalid");
+      return;
+    }
+    setUsernameStatus("checking");
+    const id = setTimeout(() => {
+      api
+        .get<{ available: boolean }>(`/auth/username-available?u=${encodeURIComponent(username)}`)
+        .then((res) => setUsernameStatus(res.available ? "available" : "taken"))
+        .catch(() => setUsernameStatus("idle"));
+    }, 400);
+    return () => clearTimeout(id);
+  }, [username, mode]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -84,13 +107,32 @@ export function AuthPage() {
         {mode === "register" && (
           <div>
             <label className="text-xs font-medium uppercase tracking-wide text-muted">Username</label>
-            <input
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none focus:border-primary"
-              placeholder="beatmakerxyz"
-            />
+            <div className="relative mt-1">
+              <input
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value.replace(/\s/g, ""))}
+                className={`w-full rounded-lg border bg-surface-2 px-3 py-2.5 text-sm outline-none focus:border-primary ${
+                  usernameStatus === "taken" || usernameStatus === "invalid" ? "border-error/50" : "border-border"
+                }`}
+                placeholder="beatmakerxyz"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                {usernameStatus === "checking" && <Loader2 size={14} className="animate-spin text-muted" />}
+                {usernameStatus === "available" && <Check size={14} className="text-success" />}
+                {(usernameStatus === "taken" || usernameStatus === "invalid") && <X size={14} className="text-error" />}
+              </span>
+            </div>
+            <p className="mt-1 text-xs">
+              {usernameStatus === "taken" && <span className="text-error">That username is already taken.</span>}
+              {usernameStatus === "available" && <span className="text-success">Username is available.</span>}
+              {usernameStatus === "invalid" && username.length > 0 && (
+                <span className="text-error">English letters, numbers, and underscores only — 3 to 24 characters.</span>
+              )}
+              {usernameStatus === "idle" && (
+                <span className="text-muted-2">English letters, numbers, and underscores only — must be unique.</span>
+              )}
+            </p>
           </div>
         )}
         {mode === "register" ? (
@@ -130,7 +172,7 @@ export function AuthPage() {
           />
         </div>
 
-        {error && <p className="rounded-lg border border-live/30 bg-live/10 px-3 py-2 text-sm text-live">{error}</p>}
+        {error && <p className="rounded-lg border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">{error}</p>}
 
         <button
           type="submit"

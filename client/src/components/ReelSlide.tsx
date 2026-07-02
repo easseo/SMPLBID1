@@ -164,7 +164,7 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
   const bg = sample.seller ? avatarGradient(sample.seller.avatarSeed) : avatarGradient(sample.id);
 
   return (
-    <div className="relative flex h-full w-full shrink-0 snap-start snap-always items-stretch justify-center overflow-hidden bg-background">
+    <div className="relative flex h-full w-full shrink-0 snap-start snap-always flex-col items-center justify-end gap-8 overflow-hidden bg-background lg:gap-12">
       {sample.imageUrl ? (
         <>
           <img
@@ -189,26 +189,49 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
 
       <button
         onClick={handleToggleSound}
-        className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface/70 backdrop-blur transition hover:bg-surface-2"
+        className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface/70 backdrop-blur transition hover:bg-surface-2 2xl:h-12 2xl:w-12"
         aria-label={soundOn ? "Mute" : "Tap for sound"}
       >
-        {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+        <span className="2xl:hidden">{soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}</span>
+        <span className="hidden 2xl:block">{soundOn ? <Volume2 size={20} /> : <VolumeX size={20} />}</span>
       </button>
 
-      <button
-        onClick={handlePrimaryTap}
-        className="relative z-10 flex w-full max-w-2xl flex-col items-center justify-center px-6"
-      >
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 backdrop-blur transition group-hover:scale-105">
-          {ended ? null : !soundOn ? <VolumeX size={26} /> : playing ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
-        </div>
-        {!ended && !soundOn && (
-          <p className="mt-3 animate-pulse text-sm font-medium text-white/80">Tap for sound</p>
-        )}
-        <div className="mt-8 h-24 w-full max-w-xl">
-          <Waveform data={sample.waveform} progress={ended ? 1 : progress} />
-        </div>
-      </button>
+      <div className="relative z-10 flex w-full max-w-2xl shrink-0 flex-col items-center px-6 2xl:max-w-3xl">
+        <button onClick={handlePrimaryTap} className="flex w-full flex-col items-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 backdrop-blur transition group-hover:scale-105 lg:h-24 lg:w-24 2xl:h-28 2xl:w-28">
+            {ended ? null : !soundOn ? (
+              <>
+                <VolumeX size={26} className="lg:hidden" />
+                <VolumeX size={34} className="hidden lg:block" />
+              </>
+            ) : playing ? (
+              <>
+                <Pause size={28} className="lg:hidden" />
+                <Pause size={36} className="hidden lg:block" />
+              </>
+            ) : (
+              <>
+                <Play size={28} className="ml-1 lg:hidden" />
+                <Play size={36} className="ml-1.5 hidden lg:block" />
+              </>
+            )}
+          </div>
+          {!ended && !soundOn && (
+            <p className="mt-3 animate-pulse text-sm font-medium text-white/80 lg:text-base 2xl:text-lg">Tap for sound</p>
+          )}
+          <div className="mt-8 h-24 w-full max-w-xl lg:h-28 lg:max-w-2xl 2xl:h-32 2xl:max-w-3xl">
+            <Waveform data={sample.waveform} progress={ended ? 1 : progress} />
+          </div>
+        </button>
+
+        <Link
+          to={`/sample/${sample.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/80 px-5 py-2 text-sm font-semibold backdrop-blur transition hover:border-primary/50 hover:bg-surface-2 lg:px-6 lg:py-2.5 lg:text-base 2xl:px-7 2xl:py-3 2xl:text-lg"
+        >
+          Full auction page <ExternalLink size={14} />
+        </Link>
+      </div>
 
       {ended && (
         <div className="absolute left-1/2 top-1/3 z-20 -translate-x-1/2 -translate-y-1/2 rotate-[-8deg] rounded-lg border-2 border-live px-4 py-1 text-lg font-black uppercase tracking-widest text-live">
@@ -216,12 +239,13 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
         </div>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-4 p-5 lg:gap-8 lg:p-8">
-        <div className="min-w-0 max-w-[65%] lg:max-w-[55%]">
+      <div className="relative z-20 flex w-full shrink-0 flex-col gap-3 p-5 lg:gap-4 lg:p-8 2xl:p-12">
+        <div className="flex items-end justify-between gap-4 lg:gap-8">
+        <div className="min-w-0 max-w-[65%] lg:max-w-[70%]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="truncate text-2xl font-bold lg:text-4xl">{sample.title}</h2>
-              <p className="mt-1 text-sm text-muted lg:mt-2 lg:text-lg">
+              <h2 className="truncate text-2xl font-bold lg:text-4xl 2xl:text-5xl">{sample.title}</h2>
+              <p className="mt-1 text-sm text-muted lg:mt-2 lg:text-lg 2xl:text-xl">
                 {sample.genre} · {sample.bpm} BPM · {sample.key}
               </p>
             </div>
@@ -230,30 +254,30 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
             </div>
           </div>
           {sample.seller && (
-            <Link to={`/u/${sample.seller.username}`} className="mt-3 flex items-center gap-2 lg:mt-4 lg:gap-3">
-              <span className="lg:scale-125 lg:origin-left">
+            <Link to={`/u/${sample.seller.username}`} className="mt-3 flex items-center gap-2 lg:mt-4 lg:gap-3 2xl:gap-4">
+              <span className="lg:hidden">
                 <Avatar seed={sample.seller.avatarSeed} username={sample.seller.username} size={28} />
               </span>
-              <span className="flex items-center gap-1 text-sm font-medium lg:text-lg">
+              <span className="hidden lg:block 2xl:hidden">
+                <Avatar seed={sample.seller.avatarSeed} username={sample.seller.username} size={36} />
+              </span>
+              <span className="hidden 2xl:block">
+                <Avatar seed={sample.seller.avatarSeed} username={sample.seller.username} size={46} />
+              </span>
+              <span className="flex items-center gap-1 text-sm font-medium lg:text-lg 2xl:text-xl">
                 {sample.seller.username}
                 {sample.seller.verified && <VerifiedBadge size={13} />}
               </span>
             </Link>
           )}
-          <Link
-            to={`/sample/${sample.id}`}
-            className="mt-3 inline-flex items-center gap-1 text-xs text-muted hover:text-foreground lg:mt-4 lg:text-sm"
-          >
-            Full auction page <ExternalLink size={11} />
-          </Link>
         </div>
 
         <div className="flex flex-col items-center gap-3 lg:gap-4">
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide text-muted-2 lg:text-xs">
+            <p className="text-[10px] uppercase tracking-wide text-muted-2 lg:text-xs 2xl:text-sm">
               {ended ? "Sold for" : "Current bid"}
             </p>
-            <p className="text-xl font-bold lg:text-3xl">{centsToDisplay(sample.currentPriceCents)}</p>
+            <p className="text-xl font-bold lg:text-3xl 2xl:text-5xl">{centsToDisplay(sample.currentPriceCents)}</p>
           </div>
 
           {!ended && !isSeller && (
@@ -261,7 +285,7 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
               <button
                 onClick={() => submitBid(minNext)}
                 disabled={submitting}
-                className="shimmer-bg flex flex-col items-center gap-0.5 rounded-full px-4 py-2.5 text-xs font-semibold text-white shadow-lg transition hover:scale-105 disabled:opacity-50 lg:px-6 lg:py-3.5 lg:text-base"
+                className="shimmer-bg flex flex-col items-center gap-0.5 rounded-full px-4 py-2.5 text-xs font-semibold text-white shadow-lg transition hover:scale-105 disabled:opacity-50 lg:px-6 lg:py-3.5 lg:text-base 2xl:px-8 2xl:py-4 2xl:text-lg"
               >
                 <Gavel size={16} />
                 Bid {centsToDisplay(minNext)}
@@ -269,13 +293,13 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
 
               <button
                 onClick={() => setCustomOpen((v) => !v)}
-                className="text-[11px] text-muted hover:text-foreground lg:text-sm"
+                className="text-[11px] text-muted hover:text-foreground lg:text-sm 2xl:text-base"
               >
                 {customOpen ? "Cancel" : "Custom amount"}
               </button>
 
               {customOpen && (
-                <div className="flex w-40 flex-col gap-1.5 rounded-xl border border-border bg-surface p-2 lg:w-52 lg:gap-2 lg:p-3">
+                <div className="flex w-40 flex-col gap-1.5 rounded-xl border border-border bg-surface p-2 lg:w-52 lg:gap-2 lg:p-3 2xl:w-64 2xl:p-4">
                   <input
                     type="number"
                     step="0.5"
@@ -283,7 +307,7 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
                     value={customAmount}
                     onChange={(e) => setCustomAmount(e.target.value)}
                     placeholder={`Min ${centsToDisplay(minNext)}`}
-                    className="w-full rounded-md border border-border bg-surface-2 px-2 py-1.5 text-xs outline-none focus:border-primary lg:px-3 lg:py-2 lg:text-sm"
+                    className="w-full rounded-md border border-border bg-surface-2 px-2 py-1.5 text-xs outline-none focus:border-primary lg:px-3 lg:py-2 lg:text-sm 2xl:text-base"
                   />
                   <button
                     onClick={() => {
@@ -291,7 +315,7 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
                       if (cents) submitBid(cents);
                     }}
                     disabled={submitting}
-                    className="rounded-md bg-primary px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50 lg:px-3 lg:py-2 lg:text-sm"
+                    className="rounded-md bg-primary px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50 lg:px-3 lg:py-2 lg:text-sm 2xl:text-base"
                   >
                     Confirm
                   </button>
@@ -302,7 +326,7 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
                 <button
                   onClick={() => submitBid(sample.buyNowPriceCents!)}
                   disabled={submitting}
-                  className="flex items-center gap-1 rounded-full bg-accent/15 px-3 py-1.5 text-[11px] font-semibold text-accent transition hover:bg-accent/25 disabled:opacity-50 lg:px-4 lg:py-2 lg:text-sm"
+                  className="flex items-center gap-1 rounded-full bg-accent/15 px-3 py-1.5 text-[11px] font-semibold text-accent transition hover:bg-accent/25 disabled:opacity-50 lg:px-4 lg:py-2 lg:text-sm 2xl:px-5 2xl:py-2.5 2xl:text-base"
                 >
                   <Flame size={12} />
                   Buy {centsToDisplay(sample.buyNowPriceCents)}
@@ -313,7 +337,7 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
 
           {!ended && isSeller && <p className="max-w-[7rem] text-center text-[11px] text-muted-2 lg:max-w-none lg:text-sm">Your listing</p>}
 
-          {ended && sample.winner && sample.certificateCode && (
+          {ended && sample.winner && sample.certificateCode && user && sample.winner.id === user.id && (
             <Link
               to={`/certificate/${sample.certificateCode}`}
               className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/20 lg:px-4 lg:py-2 lg:text-sm"
@@ -321,6 +345,7 @@ export function ReelSlide({ sample, active, soundOn, onToggleSound }: Props) {
               <Zap size={12} /> Certificate
             </Link>
           )}
+        </div>
         </div>
       </div>
     </div>
