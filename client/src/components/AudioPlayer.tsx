@@ -92,7 +92,7 @@ export function AudioPlayer({ src, waveform, watermark = true }: Props) {
       <audio ref={audioRef} src={src} onTimeUpdate={handleTimeUpdate} onEnded={handleEnded} />
       <button
         onClick={togglePlay}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:scale-105"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-background shadow-[0_0_12px_rgba(245,216,137,0.35)] transition hover:scale-105"
         aria-label={playing ? "Pause" : "Play"}
       >
         {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}

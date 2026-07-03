@@ -138,6 +138,34 @@ export function Arena() {
     return () => container.removeEventListener("wheel", onWheel);
   }, [filtered]);
 
+  // Settle guard: a smooth scrollIntoView that gets interrupted (re-render,
+  // scrollbar drag, competing gesture) can leave the container parked between
+  // two slides — CSS snap only re-engages on native scroll gestures, not on an
+  // abandoned programmatic scroll. Once scroll events go quiet, nudge the
+  // container to the nearest slide boundary so a slide is never shown cut off.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    let timer: number | undefined;
+    function settle() {
+      const h = container!.clientHeight;
+      if (!h) return;
+      const target = Math.round(container!.scrollTop / h) * h;
+      if (Math.abs(container!.scrollTop - target) > 2) {
+        container!.scrollTo({ top: target, behavior: "smooth" });
+      }
+    }
+    function onScroll() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(settle, 150);
+    }
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+      window.clearTimeout(timer);
+    };
+  }, [filtered.length]);
+
   return (
     <div className="relative">
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center px-4 pt-4">
@@ -147,7 +175,7 @@ export function Arena() {
               key={g}
               onClick={() => setGenre(g)}
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize transition ${
-                genre === g ? "bg-primary text-white" : "text-muted hover:text-foreground"
+                genre === g ? "bg-primary text-background" : "text-muted hover:text-foreground"
               }`}
             >
               {g === "all" ? "🔥 All" : g}

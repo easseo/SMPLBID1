@@ -4,13 +4,27 @@ function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-export function CountdownBadge({ endTime, ended }: { endTime: string; ended: boolean }) {
+export function CountdownBadge({
+  endTime,
+  ended,
+  size = "sm",
+}: {
+  endTime: string;
+  ended: boolean;
+  size?: "sm" | "lg";
+}) {
   const { days, hours, minutes, seconds, isUrgent, isEnded } = useCountdown(endTime);
   const done = ended || isEnded;
 
+  const sizeClass =
+    size === "lg"
+      ? "gap-2 px-5 py-2 text-sm lg:px-6 lg:py-2.5 lg:text-base 2xl:px-7 2xl:py-3 2xl:text-lg"
+      : "gap-1.5 px-2.5 py-1 text-[10px] lg:text-xs";
+  const dotClass = size === "lg" ? "h-2 w-2" : "h-1.5 w-1.5";
+
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold tabular-nums lg:text-xs ${
+      className={`inline-flex items-center whitespace-nowrap rounded-full border font-semibold tabular-nums ${sizeClass} ${
         done
           ? "border-border bg-surface-2 text-muted"
           : isUrgent
@@ -19,11 +33,11 @@ export function CountdownBadge({ endTime, ended }: { endTime: string; ended: boo
       }`}
     >
       {!done && (
-        <span className="relative flex h-1.5 w-1.5">
+        <span className={`relative flex ${dotClass}`}>
           <span
             className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isUrgent ? "bg-live animate-ping" : "bg-primary"}`}
           />
-          <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${isUrgent ? "bg-live" : "bg-primary"}`} />
+          <span className={`relative inline-flex ${dotClass} rounded-full ${isUrgent ? "bg-live" : "bg-primary"}`} />
         </span>
       )}
       {done ? "Ended" : `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`}

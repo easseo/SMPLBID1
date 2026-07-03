@@ -85,7 +85,7 @@ export function Profile() {
             key={t}
             onClick={() => setTab(t)}
             className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition ${
-              tab === t ? "bg-primary text-white" : "text-muted hover:text-foreground"
+              tab === t ? "bg-primary text-background" : "text-muted hover:text-foreground"
             }`}
           >
             {t}
