@@ -97,7 +97,7 @@ async function main() {
   }
 
   console.log("Creating ended (historical) auctions for leaderboard...");
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 10; i++) {
     const seller = randChoice(users);
     let winnerCandidate = randChoice(users);
     while (winnerCandidate.id === seller.id) winnerCandidate = randChoice(users);
@@ -148,7 +148,7 @@ async function main() {
   }
 
   console.log("Creating live auctions...");
-  const liveDurations = [3, 8, 25, 60, 240, 1440, 4320]; // minutes: some ending very soon
+  const liveDurations = [65, 70, 80, 90, 100, 120, 150, 180, 210, 240, 300, 360, 480, 600, 720, 1000, 1440, 2160, 3000, 4320, 7200, 10080, 14400, 20160, 40320]; // minutes: 25 auctions, all >1h
   for (let i = 0; i < liveDurations.length; i++) {
     const seller = randChoice(users);
     const meta = randChoice(GENRES);

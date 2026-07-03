@@ -1,29 +1,65 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { api } from "../lib/api";
 import { getSocket } from "../lib/socket";
-import type { SampleSummary } from "../lib/types";
+import type { PaginatedSamples, SampleSummary } from "../lib/types";
 import { ReelSlide } from "../components/ReelSlide";
+
+const PAGE_SIZE = 20;
 
 export function Arena() {
   const [samples, setSamples] = useState<SampleSummary[]>([]);
   const [genre, setGenre] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(1);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [soundOn, setSoundOn] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const slideRefs = useRef(new Map<string, HTMLDivElement>());
 
+  // Load a specific page and merge results into the samples list.
+  const loadPage = useCallback(async (pageNum: number) => {
+    const res = await api.get<PaginatedSamples>(
+      `/samples?status=live&page=${pageNum}&limit=${PAGE_SIZE}`
+    );
+    return res;
+  }, []);
+
   useEffect(() => {
-    api
-      .get<{ samples: SampleSummary[] }>("/samples?status=live")
+    loadPage(1)
       .then((res) => {
         const sorted = [...res.samples].sort((a, b) => new Date(a.endTime).getTime() - new Date(b.endTime).getTime());
         setSamples(sorted);
+        setHasMore(res.hasMore);
+        setPage(1);
         if (sorted.length > 0) setActiveId(sorted[0].id);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [loadPage]);
+
+  async function loadMore() {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const res = await loadPage(nextPage);
+      setSamples((prev) => {
+        const existingIds = new Set(prev.map((s) => s.id));
+        const newSamples = res.samples.filter((s) => !existingIds.has(s.id));
+        // Keep the overall list sorted by endTime.
+        const merged = [...prev, ...newSamples].sort(
+          (a, b) => new Date(a.endTime).getTime() - new Date(b.endTime).getTime()
+        );
+        return merged;
+      });
+      setHasMore(res.hasMore);
+      setPage(nextPage);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function refreshSample(id: string) {
     try {
@@ -62,6 +98,13 @@ export function Arena() {
   useEffect(() => {
     if (activeIndex >= 0) targetIndexRef.current = activeIndex;
   }, [activeIndex]);
+
+  // Auto-load next page when the user lands on the last slide.
+  useEffect(() => {
+    if (hasMore && !loadingMore && filtered.length > 0 && activeIndex === filtered.length - 1) {
+      void loadMore();
+    }
+  }, [activeIndex, filtered.length, hasMore, loadingMore]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -248,6 +291,11 @@ export function Arena() {
               />
             </div>
           ))}
+          {loadingMore && (
+            <div className="flex h-20 items-center justify-center">
+              <p className="text-sm text-muted">Loading more…</p>
+            </div>
+          )}
         </div>
       )}
     </div>

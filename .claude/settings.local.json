@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npm test *)",
+      "Bash(npx prisma *)",
+      "Bash(node --input-type=module)",
+      "Bash(npm run *)",
+      "Bash(curl -s \"http://localhost:4000/api/samples?page=1&limit=2\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({'page':d['page'],'limit':d['limit'],'total':d['total'],'hasMore':d['hasMore'],'count':len\\(d['samples']\\),'firstId':d['samples'][0]['id'] if d['samples'] else None}, indent=2\\)\\)\")",
+      "Bash(curl -s \"http://localhost:4000/api/samples?page=2&limit=2\")",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code}\\\\n\" \"http://localhost:4000/api/samples?page=-1&limit=10\")",
+      "Bash(curl -s \"http://localhost:4000/api/samples?page=abc&limit=10\")",
+      "Bash(curl -s \"http://localhost:4000/api/samples?page=1&limit=500\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('limit returned:', d['limit']\\)\")",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',x=>d+=x\\);process.stdin.on\\('end',\\(\\)=>{const o=JSON.parse\\(d\\);console.log\\(JSON.stringify\\({page:o.page,limit:o.limit,total:o.total,hasMore:o.hasMore,count:o.samples.length},null,2\\)\\)}\\)\")",
+      "Bash(curl -s \"http://localhost:4000/api/samples?page=3&limit=2\")",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',x=>d+=x\\);process.stdin.on\\('end',\\(\\)=>{const o=JSON.parse\\(d\\);console.log\\('limit returned:',o.limit,'count:',o.samples.length\\)}\\)\")",
+      "Bash(curl -s \"http://localhost:4000/api/samples?status=live&page=1&limit=100\")",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',x=>d+=x\\);process.stdin.on\\('end',\\(\\)=>{const o=JSON.parse\\(d\\);console.log\\('live total:',o.total,'live count on page 1:',o.samples.length,'all live status:',o.samples.every\\(s=>s.status==='live'\\)\\)}\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:4000/api/samples?page=1.5&limit=10\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:4000/api/samples?page=0&limit=10\")",
+      "Bash(curl -s \"http://localhost:4000/api/samples?page=1&limit=1\")",
+      "Bash(taskkill //F //IM node.exe)"
+    ]
+  }
+}

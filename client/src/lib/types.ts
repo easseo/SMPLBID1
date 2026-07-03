@@ -68,3 +68,12 @@ export interface ContestedSample {
   bidCount: number;
   currentPriceCents: number;
 }
+
+/** Response shape from GET /api/samples (paginated). */
+export interface PaginatedSamples {
+  samples: SampleSummary[];
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}

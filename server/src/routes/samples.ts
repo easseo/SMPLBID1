@@ -12,6 +12,7 @@ import { getWavDurationSeconds } from "../lib/wavDuration.js";
 import { getMp3DurationSeconds } from "../lib/mp3Duration.js";
 import { getM4aDurationSeconds } from "../lib/m4aDuration.js";
 import { detectImageType } from "../lib/imageSignature.js";
+import { serveWithRange } from "../lib/rangeStream.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads");
@@ -179,12 +180,44 @@ function serializeSample(sample: any, viewerId?: string) {
 
 router.get("/", async (req, res) => {
   const status = typeof req.query.status === "string" ? req.query.status : undefined;
-  const samples = await prisma.sample.findMany({
-    where: status ? { status } : undefined,
-    include: { seller: true, winner: true, _count: { select: { bids: true } } },
-    orderBy: { endTime: "asc" },
+
+  // --- Pagination params ---
+  const rawPage = req.query.page;
+  const rawLimit = req.query.limit;
+
+  const pageNum = rawPage !== undefined ? Number(rawPage) : 1;
+  const limitNum = rawLimit !== undefined ? Number(rawLimit) : 20;
+
+  if (
+    !Number.isInteger(pageNum) || pageNum < 1 ||
+    !Number.isInteger(limitNum) || limitNum < 1
+  ) {
+    return res.status(400).json({ error: "page and limit must be positive integers" });
+  }
+
+  const limit = Math.min(limitNum, 100);
+  const skip = (pageNum - 1) * limit;
+
+  const where = status ? { status } : undefined;
+
+  const [total, samples] = await Promise.all([
+    prisma.sample.count({ where }),
+    prisma.sample.findMany({
+      where,
+      include: { seller: true, winner: true, _count: { select: { bids: true } } },
+      orderBy: { endTime: "asc" },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  res.json({
+    samples: samples.map((s) => serializeSample(s, req.userId)),
+    page: pageNum,
+    limit,
+    total,
+    hasMore: skip + samples.length < total,
   });
-  res.json({ samples: samples.map((s) => serializeSample(s, req.userId)) });
 });
 
 router.get("/:id", async (req, res) => {
@@ -345,9 +378,7 @@ router.get("/:id/preview", async (req, res) => {
   const stat = await fsp.stat(filePath).catch(() => null);
   if (!stat) return res.status(404).json({ error: "Audio file missing" });
 
-  res.setHeader("Content-Type", mimeForFile(filePath));
-  res.setHeader("Content-Length", String(stat.size));
-  fs.createReadStream(filePath).pipe(res);
+  serveWithRange(req, res, filePath, stat.size, mimeForFile(filePath));
 });
 
 router.get("/:id/full", requireAuth, async (req, res) => {
@@ -361,9 +392,8 @@ router.get("/:id/full", requireAuth, async (req, res) => {
   const filePath = path.join(UPLOAD_DIR, path.basename(sample.fullAudioUrl));
   const stat = await fsp.stat(filePath).catch(() => null);
   if (!stat) return res.status(404).json({ error: "Audio file missing" });
-  res.setHeader("Content-Type", mimeForFile(filePath));
-  res.setHeader("Content-Length", String(stat.size));
-  fs.createReadStream(filePath).pipe(res);
+
+  serveWithRange(req, res, filePath, stat.size, mimeForFile(filePath));
 });
 
 // Stems/MIDI archives share the full file's access rule: seller always, winner

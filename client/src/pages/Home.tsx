@@ -4,7 +4,7 @@ import { Lock, Zap, Trophy, ShieldCheck, ArrowRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { api, centsToDisplay } from "../lib/api";
 import { getSocket } from "../lib/socket";
-import type { SampleSummary } from "../lib/types";
+import type { PaginatedSamples, SampleSummary } from "../lib/types";
 import { SampleCard } from "../components/SampleCard";
 import { Avatar } from "../components/Avatar";
 
@@ -24,7 +24,7 @@ export function Home() {
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
 
   useEffect(() => {
-    api.get<{ samples: SampleSummary[] }>("/samples?status=live").then((res) => setSamples(res.samples.slice(0, 3)));
+    api.get<PaginatedSamples>("/samples?status=live&limit=6").then((res) => setSamples(res.samples));
 
     const socket = getSocket();
     const handler = (event: ActivityEvent) => {
